@@ -1,4 +1,5 @@
 import torch
+from PIL import Image
 
 class dataset(torch.utils.data.Dataset):
     def __init__(self,file_list,transform=None):
