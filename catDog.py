@@ -22,6 +22,7 @@ batch_size = 96 # we will use mini-batch method
 epochs = 1 # How much to train a model
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(torch.cuda.is_available())
 
 torch.manual_seed(1234)
 if device =='cuda':
@@ -58,14 +59,15 @@ test_transforms = transforms.Compose([
     ])
 
 def unZip():
-    with zipfile.ZipFile(os.path.join(base_dir, 'train.zip')) as train_zip:
-        train_zip.extractall('data')
+    if os.path.exists("data/train") == False:
+        print("hit")
+        with zipfile.ZipFile(os.path.join(base_dir, 'train.zip')) as train_zip:
+            train_zip.extractall('data')
 
-    with zipfile.ZipFile(os.path.join(base_dir, 'test.zip')) as test_zip:
-        test_zip.extractall('data')
+        with zipfile.ZipFile(os.path.join(base_dir, 'test.zip')) as test_zip:
+            test_zip.extractall('data')
 
-
-def trainModel(train_data, train_loader, val_data, val_loader, whichNet, kernelSize):
+def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernelSize):
     print(len(train_data), len(train_loader))
     print(len(val_data), len(val_loader))
     print(train_data[0][0].shape)
@@ -166,8 +168,6 @@ def dogProb(model, test_loader):
 
 def main():
     unZip()
-    os.listdir(train_dir)[:5]
-
     train_list = glob.glob(os.path.join(train_dir,'*.jpg'))
     test_list = glob.glob(os.path.join(test_dir, '*.jpg'))
     train_list, val_list = train_test_split(train_list, test_size=0.2)
@@ -182,13 +182,13 @@ def main():
         dataset = val_data, batch_size=batch_size, shuffle=True)
 
     #create model
-    model = trainModel(train_data, train_loader, val_data, val_loader, argv[1], int(argv[2]))
+    model = createModel(train_data, train_loader, val_data, val_loader, argv[1], int(argv[2]))
 
     #train model
     runAllEpochs(model, train_loader, val_loader)
 
     #result
-    dogProb(model, test_loader)
+#    dogProb(model, test_loader)
 
 if __name__ == '__main__':
     main()
