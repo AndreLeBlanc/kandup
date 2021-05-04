@@ -2,11 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from GaborNet import GaborConv2d
-from torchvision import datasets, models, transforms
-from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
 from sklearn.model_selection import train_test_split
-import numpy as np
 import glob
 from PIL import Image
 import pandas as pd
@@ -53,7 +50,6 @@ val_transforms = transforms.Compose([
         transforms.ToTensor(),
     ])
 
-
 test_transforms = transforms.Compose([
     transforms.Resize((220, 220)),
      transforms.RandomResizedCrop(220),
@@ -69,18 +65,25 @@ def unZip():
         test_zip.extractall('data')
 
 
-def trainModel(train_data, train_loader, val_data, val_loader, whichNet):
+def trainModel(train_data, train_loader, val_data, val_loader, whichNet, kernelSize):
     print(len(train_data), len(train_loader))
     print(len(val_data), len(val_loader))
     print(train_data[0][0].shape)
-    if whichNet.upper() == "CNN":
-        model = cnnGabZern.Cnn().to(device)
-    elif whichNet.upper() == "GABOR" or  whichNet.upper() == "GABORNET":
-        model = cnnGabZern.Gabor().to(device)
+    if whichNet.upper() == "CNNC":
+        model = cnnGabZern.oneConv(kernelSize, "Conv2d").to(device)
+    elif whichNet.upper() == "CNN3C":
+        model = cnnGabZern.threeConv(kernelSize, "Conv2d").to(device)
+    elif whichNet.upper() == "GABORC":
+        model = cnnGabZern.oneConv(kernelSize, "Gabor").to(device)
+    elif whichNet.upper() == "GABOR3C":
+        model = cnnGabZern.threeConv(kernelSize, "Gabor").to(device)
+    elif whichNet.upper() == "ZERN" or  whichNet.upper() == "ZERNIKE":
+        model = cnnGabZern.Zernike(kernelSize).to(device)
     else:
         print("no model named ", whichNet)
         exit()
     model.train()
+    print(model)
     return model
 
 def runEpoch(model, train_loader, optimizer, criterion):
@@ -179,7 +182,7 @@ def main():
         dataset = val_data, batch_size=batch_size, shuffle=True)
 
     #create model
-    model = trainModel(train_data, train_loader, val_data, val_loader, argv[1])
+    model = trainModel(train_data, train_loader, val_data, val_loader, argv[1], int(argv[2]))
 
     #train model
     runAllEpochs(model, train_loader, val_loader)
