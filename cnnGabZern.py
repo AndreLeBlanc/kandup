@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from GaborNet import GaborConv2d
-import myFilt
+from myFilt import Zernike
 
 class oneConv(nn.Module):
    def __init__(self, kernelSize, fLayer):
@@ -13,6 +13,8 @@ class oneConv(nn.Module):
                             kernel_size=kernelSize, stride=2)
       self.g0 = GaborConv2d(in_channels=3, out_channels=16,
                             kernel_size=kernelSize, stride=2)
+      self.z0 = Zernike(in_channels=3, out_channels=16,
+                            kernel_size=kernelSize, stride=2)
       self.c1 = nn.Conv2d(16, 64, (3,3), stride=2)
       self.fc1 = nn.Linear(fcIn, 10)
       self.fc2 = nn.Linear(10, 2)
@@ -21,6 +23,8 @@ class oneConv(nn.Module):
    def forward(self, x):
        if self.fLayer == "Conv2d":
            x = F.leaky_relu(self.c0(x))
+       elif self.fLayer == "Zern":
+           x = F.leaky_relu(self.z0(x))
        else:
            x = F.leaky_relu(self.g0(x))
        pool = nn.MaxPool2d(2)

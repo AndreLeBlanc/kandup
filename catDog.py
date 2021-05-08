@@ -19,11 +19,9 @@ import dataset
 
 lr = 0.001 # learning_rate
 batch_size = 96 # we will use mini-batch method
-epochs = 1 # How much to train a model
+epochs = 10 # How much to train a model
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(torch.cuda.is_available())
-
 torch.manual_seed(1234)
 if device =='cuda':
     torch.cuda.manual_seed_all(1234)
@@ -60,11 +58,10 @@ test_transforms = transforms.Compose([
 
 def unZip():
     if os.path.exists("data/train") == False:
-        print("hit")
-        with zipfile.ZipFile(os.path.join(base_dir, 'train.zip')) as train_zip:
+         with zipfile.ZipFile(os.path.join(base_dir, 'train.zip')) as train_zip:
             train_zip.extractall('data')
 
-        with zipfile.ZipFile(os.path.join(base_dir, 'test.zip')) as test_zip:
+         with zipfile.ZipFile(os.path.join(base_dir, 'test.zip')) as test_zip:
             test_zip.extractall('data')
 
 def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernelSize):
@@ -79,8 +76,10 @@ def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernel
         model = cnnGabZern.oneConv(kernelSize, "Gabor").to(device)
     elif whichNet.upper() == "GABOR3C":
         model = cnnGabZern.threeConv(kernelSize, "Gabor").to(device)
-    elif whichNet.upper() == "ZERN" or  whichNet.upper() == "ZERNIKE":
-        model = cnnGabZern.Zernike(kernelSize).to(device)
+    elif whichNet.upper() == "ZERNC":
+        model = cnnGabZern.oneConv(kernelSize, "Zern").to(device)
+    elif whichNet.upper() == "ZERN3C":
+        model = cnnGabZern.oneConv(kernelSize, "Zern").to(device)
     else:
         print("no model named ", whichNet)
         exit()
