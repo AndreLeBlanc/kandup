@@ -17,8 +17,8 @@ from sys import argv
 import cnnGabZern
 import dataset
 
-lr = 0.001 # learning_rate
-batch_size = 96 # we will use mini-batch method
+lr = 0.01 # learning_rate
+batch_size = 300 # we will use mini-batch method
 epochs = 10 # How much to train a model
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -79,7 +79,7 @@ def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernel
     elif whichNet.upper() == "ZERNC":
         model = cnnGabZern.oneConv(kernelSize, "Zern").to(device)
     elif whichNet.upper() == "ZERN3C":
-        model = cnnGabZern.oneConv(kernelSize, "Zern").to(device)
+        model = cnnGabZern.threeConv(kernelSize, "Zern").to(device)
     else:
         print("no model named ", whichNet)
         exit()

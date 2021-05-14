@@ -5,6 +5,8 @@ from torch.nn import Parameter
 from torch.nn.modules import Conv2d, Module
 import numpy as np
 import math
+import cmath
+from torch import linalg as la
 
 class Zernike(nn.Module):
     """ Custom Linear layer but mimics a standard linear layer """
@@ -58,43 +60,46 @@ class Zernike(nn.Module):
                 a = abs(i-center)
                 b = abs(j-center)
                 dist = math.sqrt(a*a + b*b)
-                if dist <= math.sqrt(center*center+0.25):
-                    radials[i, j] = math.sqrt(a*a + b*b)
+                if dist <= center+0.01:
+                    radials[i, j] = dist
         return radials
 
-    def polys(self, radials, filtSide, n, m):
+    def polys(self, radials, filtSide, order, rep):
         poly = torch.zeros(filtSide, filtSide)
         for i in range(0, filtSide):
             for j in range(0, filtSide):
                 if radials[i, j] > 0:
-                    for s in range(0, (n-m)//2):
-                        top=((-1)**s * math.factorial(n-s))
-                        bot =(math.factorial(s)*math.gamma((n+m)/2-s+1)*math.gamma((n-m)/2-s)+1)
-                        poly[i, j] += (top/bot)*math.pow(radials[i, j], n-2*s)
+                    for s in range(0, (order-rep)//2+1):
+                        top = ((-1)**s * math.factorial(order-s))
+                        bot = (math.factorial(s)*math.gamma((order+rep)/2-s+1)*
+                               math.gamma((order-rep)/2-s+1))
+                        poly[i, j] += (top/bot)*math.pow(radials[i, j], order-2*s)
         return poly
 
-    def expo(self, r, n, filtSide, center):
+    def expo(self, r, rep, filtSide, center):
         for i in range(0, filtSide):
             for j in range(0, filtSide):
                 if r[i, j] > 0:
                     phi = math.atan(abs(j-center)/(abs(i-center)+0.001))
-                    r[i, j] *= 2.71828**(n*phi*1j).real
+                    r[i, j] *= cmath.exp(rep*phi*1j).real
         return r
 
     def calculate_weights(self):
-        n = 2
-        m=0
+        order = 0
+        rep = 0
         filtSide = self.conv_layer.weight.data.shape[3]
         center = filtSide/2-0.5
+        radials = self.radialDist(filtSide, center)
         for i in range(self.conv_layer.out_channels):
-            for j in range(self.conv_layer.in_channels):
-                if m == n:
-                    n += 1
-                    m = 0
-                else:
-                    m += 1
-                radials = self.radialDist(filtSide, center)
-                r = self.polys(radials, filtSide, n, m)
-                exponents = self.expo(r, n, filtSide, center)
-                print(exponents)
-                self.conv_layer.weight.data[i, j] = exponents
+           if rep == order:
+               if order < 6:
+                   order += 1
+                   rep = 0
+           else:
+               rep += 1
+           for j in range(self.conv_layer.in_channels):
+                r = self.polys(radials, filtSide, order, rep)
+                exponents = self.expo(r, rep, filtSide, center)
+                norm = la.norm(exponents)
+                normalized = torch.div(exponents, norm)
+                self.conv_layer.weight.data[i, j] = normalized
