@@ -19,7 +19,7 @@ import dataset
 
 lr = 0.01 # learning_rate
 batch_size = 300 # we will use mini-batch method
-epochs = 10 # How much to train a model
+epochs = 1 # How much to train a model
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(1234)
@@ -147,7 +147,6 @@ def dogProb(model, test_loader):
     idx = list(map(lambda x: x[0],dog_probs))
     prob = list(map(lambda x: x[1],dog_probs))
     submission = pd.DataFrame({'id':idx,'label':prob})
-    id_list = []
     class_ = {0: 'cat', 1: 'dog'}
     fig, axes = plt.subplots(2, 5, figsize=(20, 12), facecolor='w')
 
@@ -175,8 +174,6 @@ def main():
     val_data = dataset.dataset(val_list, transform=test_transforms)
     train_loader = torch.utils.data.DataLoader(
         dataset = train_data, batch_size=batch_size, shuffle=True )
-    test_loader = torch.utils.data.DataLoader(
-        dataset = test_data, batch_size=batch_size, shuffle=True)
     val_loader = torch.utils.data.DataLoader(
         dataset = val_data, batch_size=batch_size, shuffle=True)
 
