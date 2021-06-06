@@ -17,47 +17,52 @@ from sys import argv
 import cnnGabZern
 import dataset
 
-lr = 0.01 # learning_rate
-batch_size = 300 # we will use mini-batch method
-epochs = 1 # How much to train a model
+lr = 0.001 # learning_rate
+batch_size = 32 # we will use mini-batch method
+epochs = 90 # How much to train a model
+valAccs = []
+
+if argv[3].upper() == "KIDNEY":
+    imSize = 2048
+else:
+    imSize = 220
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(1234)
 if device =='cuda':
     torch.cuda.manual_seed_all(1234)
 
-os.listdir('input/dogs-vs-cats-redux-kernels-edition')
+#os.listdir('input/dogs-vs-cats-redux-kernels-edition')
 
 os.makedirs('data', exist_ok=True)
 
-base_dir = 'input/dogs-vs-cats-redux-kernels-edition'
-train_dir = 'data/train'
+base_dir = '../input/dogs-vs-cats-redux-kernels-edition'
 test_dir = 'data/test'
 
 #data Augumentation
 train_transforms =  transforms.Compose([
-        transforms.Resize((220, 220)),
-        transforms.RandomResizedCrop(220),
+        transforms.Resize((imSize, imSize)),
+        transforms.RandomResizedCrop(imSize),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
     ])
 
 val_transforms = transforms.Compose([
-        transforms.Resize((220, 220)),
-        transforms.RandomResizedCrop(220),
+        transforms.Resize((imSize, imSize)),
+        transforms.RandomResizedCrop(imSize),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
     ])
 
 test_transforms = transforms.Compose([
-    transforms.Resize((220, 220)),
-     transforms.RandomResizedCrop(220),
+    transforms.Resize((imSize, imSize)),
+     transforms.RandomResizedCrop(imSize),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor()
     ])
 
-def unZip():
-    if os.path.exists("data/train") == False:
+def unZip(trainPath):
+    if os.path.exists(trainPath) == False:
          with zipfile.ZipFile(os.path.join(base_dir, 'train.zip')) as train_zip:
             train_zip.extractall('data')
 
@@ -68,18 +73,19 @@ def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernel
     print(len(train_data), len(train_loader))
     print(len(val_data), len(val_loader))
     print(train_data[0][0].shape)
+    inChannels = train_data[0][0].shape[0]
     if whichNet.upper() == "CNNC":
-        model = cnnGabZern.oneConv(kernelSize, "Conv2d").to(device)
+        model = cnnGabZern.oneConv(kernelSize, "Conv2d", inChannels, imSize).to(device)
     elif whichNet.upper() == "CNN3C":
-        model = cnnGabZern.threeConv(kernelSize, "Conv2d").to(device)
+        model = cnnGabZern.threeConv(kernelSize, "Conv2d", inChannelss, imSize).to(device)
     elif whichNet.upper() == "GABORC":
-        model = cnnGabZern.oneConv(kernelSize, "Gabor").to(device)
+        model = cnnGabZern.oneConv(kernelSize, "Gabor", inChannelss, imSize).to(device)
     elif whichNet.upper() == "GABOR3C":
-        model = cnnGabZern.threeConv(kernelSize, "Gabor").to(device)
+        model = cnnGabZern.threeConv(kernelSize, "Gabor", inChannelss, imSize).to(device)
     elif whichNet.upper() == "ZERNC":
-        model = cnnGabZern.oneConv(kernelSize, "Zern").to(device)
+        model = cnnGabZern.oneConv(kernelSize, "Zern", inChannelss, imSize).to(device)
     elif whichNet.upper() == "ZERN3C":
-        model = cnnGabZern.threeConv(kernelSize, "Zern").to(device)
+        model = cnnGabZern.threeConv(kernelSize, "Zern", inChannelss, imSize).to(device)
     else:
         print("no model named ", whichNet)
         exit()
@@ -94,7 +100,6 @@ def runEpoch(model, train_loader, optimizer, criterion):
     for data, label in train_loader:
         data = data.to(device)
         label = label.to(device)
-
         output = model(data)
         loss = criterion(output, label)
 
@@ -124,6 +129,7 @@ def validateEpoch(model, val_loader, criterion, epoch):
 
         print('Epoch : {}, val_accuracy : {}, val_loss : {}'
               .format(epoch+1, epoch_val_accuracy, epoch_val_loss))
+        valAccs.append(float(epoch_val_accuracy))
 
 def runAllEpochs(model, train_loader, val_loader):
     optimizer = optim.Adam(params = model.parameters(),lr=0.001)
@@ -158,19 +164,20 @@ def dogProb(model, test_loader):
         else:
             label = 0
 
-    img_path = os.path.join(test_dir, '{}.jpg'.format(i))
     img = Image.open(img_path)
 
     ax.set_title(class_[label])
     ax.imshow(img)
 
 def main():
-    unZip()
+    if argv[3].upper() == "KIDNEY":
+        train_dir= 'data/trainKidney'
+    else:
+        train_dir= '../data/train'
+    unZip(train_dir)
     train_list = glob.glob(os.path.join(train_dir,'*.jpg'))
-    test_list = glob.glob(os.path.join(test_dir, '*.jpg'))
     train_list, val_list = train_test_split(train_list, test_size=0.2)
     train_data = dataset.dataset(train_list, transform=train_transforms)
-    test_data = dataset.dataset(test_list, transform=test_transforms)
     val_data = dataset.dataset(val_list, transform=test_transforms)
     train_loader = torch.utils.data.DataLoader(
         dataset = train_data, batch_size=batch_size, shuffle=True )
@@ -184,7 +191,7 @@ def main():
     runAllEpochs(model, train_loader, val_loader)
 
     #result
-#    dogProb(model, test_loader)
+    print(argv[1], argv[2], argv[3], valAccs)
 
 if __name__ == '__main__':
     main()
