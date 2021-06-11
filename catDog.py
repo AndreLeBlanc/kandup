@@ -17,26 +17,23 @@ from sys import argv
 import cnnGabZern
 import dataset
 
-lr = 0.001 # learning_rate
 batch_size = 32 # we will use mini-batch method
-epochs = 90 # How much to train a model
+epochs = 20 # How much to train a model
 valAccs = []
 
 if argv[3].upper() == "KIDNEY":
     imSize = 2048
 else:
-    imSize = 220
+    imSize = 256
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(1234)
 if device =='cuda':
     torch.cuda.manual_seed_all(1234)
 
-#os.listdir('input/dogs-vs-cats-redux-kernels-edition')
-
 os.makedirs('data', exist_ok=True)
 
-base_dir = '../input/dogs-vs-cats-redux-kernels-edition'
+base_dir = 'input/'#../input/dogs-vs-cats-redux-kernels-edition'
 test_dir = 'data/test'
 
 #data Augumentation
@@ -77,18 +74,23 @@ def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernel
     if whichNet.upper() == "CNNC":
         model = cnnGabZern.oneConv(kernelSize, "Conv2d", inChannels, imSize).to(device)
     elif whichNet.upper() == "CNN3C":
-        model = cnnGabZern.threeConv(kernelSize, "Conv2d", inChannelss, imSize).to(device)
+        model = cnnGabZern.threeConv(kernelSize, "Conv2d", inChannels, imSize).to(device)
     elif whichNet.upper() == "GABORC":
-        model = cnnGabZern.oneConv(kernelSize, "Gabor", inChannelss, imSize).to(device)
+        model = cnnGabZern.oneConv(kernelSize, "Gabor", inChannels, imSize).to(device)
     elif whichNet.upper() == "GABOR3C":
-        model = cnnGabZern.threeConv(kernelSize, "Gabor", inChannelss, imSize).to(device)
+        model = cnnGabZern.threeConv(kernelSize, "Gabor", inChannels, imSize).to(device)
     elif whichNet.upper() == "ZERNC":
-        model = cnnGabZern.oneConv(kernelSize, "Zern", inChannelss, imSize).to(device)
+        model = cnnGabZern.oneConv(kernelSize, "Zern", inChannels, imSize).to(device)
     elif whichNet.upper() == "ZERN3C":
-        model = cnnGabZern.threeConv(kernelSize, "Zern", inChannelss, imSize).to(device)
+        model = cnnGabZern.threeConv(kernelSize, "Zern", inChannels, imSize).to(device)
+    elif whichNet.upper() == "AZERN":
+        model = cnnGabZern.AlexNet("Zern").to(device)
+    elif whichNet.upper() == "AGAB":
+        model = cnnGabZern.AlexNet("Gabor").to(device)
+    elif whichNet.upper() == "ACNN":
+        model = cnnGabZern.AlexNet("Conv2d").to(device)
     else:
         print("no model named ", whichNet)
-        exit()
     model.train()
     print(model)
     return model
@@ -132,12 +134,12 @@ def validateEpoch(model, val_loader, criterion, epoch):
         valAccs.append(float(epoch_val_accuracy))
 
 def runAllEpochs(model, train_loader, val_loader):
-    optimizer = optim.Adam(params = model.parameters(),lr=0.001)
+    optimizer = optim.Adam(params = model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
     for epoch in range(epochs):
         epoch_accuracy, epoch_loss = runEpoch(model, train_loader, optimizer, criterion)
-        print('Epoch : {}, train accuracy : {}, train loss : {}'
-              .format(epoch+1, epoch_accuracy,epoch_loss))
+  #      print('Epoch : {}, train accuracy : {}, train loss : {}'
+   #           .format(epoch+1, epoch_accuracy,epoch_loss))
         validateEpoch(model, val_loader, criterion, epoch)
 
 def dogProb(model, test_loader):
@@ -173,7 +175,7 @@ def main():
     if argv[3].upper() == "KIDNEY":
         train_dir= 'data/trainKidney'
     else:
-        train_dir= '../data/train'
+        train_dir= 'data/train'
     unZip(train_dir)
     train_list = glob.glob(os.path.join(train_dir,'*.jpg'))
     train_list, val_list = train_test_split(train_list, test_size=0.2)
