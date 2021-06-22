@@ -2,54 +2,24 @@ import math
 import torch
 import torch.nn as nn
 from torch.nn import Parameter
-from torch.nn.modules import Conv2d
+from torch.nn.modules.conv import _ConvNd
+from torch.nn import functional as F
 import cmath
+from torch.nn.modules.utils import _pair
 from torch import linalg as la
 
-class Zernike(nn.Module):
-    """ Custom Linear layer but mimics a standard linear layer """
-    def __init__(self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride=1,
-        padding=0,
-        dilation=1,
-        groups=1,
-        bias=False,
-        padding_mode="zeros",
-    ):
-        super().__init__()
+class Zernike(_ConvNd):
+    def __init__(self, in_channels, out_channels, kernel_size, device="cpu", stride=1,
+                 padding=0, dilation=1, groups=1, bias=False, padding_mode='zeros'):
+        kernel_size = _pair(kernel_size)
+        stride = _pair(stride)
+        padding = _pair(padding)
+        dilation = _pair(dilation)
 
+        super(Zernike, self).__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, False, _pair(0), groups, bias, padding_mode)
         self.is_calculated = False
-        self.conv_layer = Conv2d(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride,
-            padding,
-            dilation,
-            groups,
-            bias,
-            padding_mode,
-        )
-        self.kernel_size = self.conv_layer.kernel_size
-
-        self.weight = Parameter(
-            torch.empty(self.conv_layer.weight.shape, requires_grad=True),
-            requires_grad=True,
-        )
-        self.register_parameter("weight", self.weight)
-
-    def forward(self, input_tensor):
-        if self.training:
-            self.calculate_weights()
-            self.is_calculated = False
-        if not self.training:
-            if not self.is_calculated:
-                self.calculate_weights()
-                self.is_calculated = True
-        return self.conv_layer(input_tensor)
+        self.device = device
+        self.weights = torch.empty(self.weight.shape, requires_grad=False).to(self.device)
 
     def radialDist(self, filtSide, center):
         radials = torch.zeros(filtSide, filtSide)
@@ -74,30 +44,40 @@ class Zernike(nn.Module):
                         poly[i, j] += (top/bot)*math.pow(radials[i, j], order-2*s)
         return poly
 
-    def expo(self, r, rep, filtSide, center):
+    def expo(self, r, rep, filtSide, center, phi):
         for i in range(0, filtSide):
             for j in range(0, filtSide):
                 if r[i, j] > 0:
-                    phi = math.atan(abs(j-center)/(abs(i-center)+0.001))
-                    r[i, j] *= cmath.exp(rep*phi*1j).real
+                    localPhi = phi  + math.atan(abs(j-center)/(abs(i-center)+0.001))
+                    r[i, j] *= cmath.exp(rep*localPhi*1j).real
         return r
 
-    def calculate_weights(self):
+    def forward(self, input_tensor):
         order = 0
         rep = 0
-        filtSide = self.conv_layer.weight.data.shape[3]
+        filtSide = self.weights.data.shape[3]
         center = filtSide/2-0.5
         radials = self.radialDist(filtSide, center)
-        for i in range(self.conv_layer.out_channels):
-           if rep == order:
-               if order < 6:
-                   order += 1
+        phi = 0
+        g = torch.zeros(self.weights.shape)
+        for i in range(self.out_channels):
+           for j in range(self.in_channels):
+                if rep == order:
+                   if order < 6:
+                       order += 1
+                       rep = 0
+                if order == 6:
+                   order = 1
                    rep = 0
-           else:
-               rep += 1
-           for j in range(self.conv_layer.in_channels):
+                   phi += (math.pi)/math.ceil((self.in_channels*self.out_channels)/20-1)
+                else:
+                   rep += 1
+
                 r = self.polys(radials, filtSide, order, rep)
-                exponents = self.expo(r, rep, filtSide, center)
+                exponents = self.expo(r, rep, filtSide, center, phi)
                 norm = la.norm(exponents)
-                normalized = torch.div(exponents, norm)
-                self.conv_layer.weight.data[i, j] = normalized
+                normalized = torch.zeros(self.kernel_size, requires_grad=True)
+                normalized.data = normalized.data + torch.div(exponents, norm)
+                g[i, j] = normalized
+        self.weights = g
+        return F.conv2d(input_tensor, self.weights, self.bias, self.stride, self.padding, self.dilation, self.groups)

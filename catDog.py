@@ -17,14 +17,11 @@ from sys import argv
 import cnnGabZern
 import dataset
 
-batch_size = 32 # we will use mini-batch method
-epochs = 20 # How much to train a model
+batch_size = 64 # we will use mini-batch method
+epochs = 50 # How much to train a model
 valAccs = []
 
-if argv[3].upper() == "KIDNEY":
-    imSize = 2048
-else:
-    imSize = 256
+imSize = 256
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(1234)
@@ -91,6 +88,7 @@ def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernel
         model = cnnGabZern.AlexNet("Conv2d").to(device)
     else:
         print("no model named ", whichNet)
+        exit(0)
     model.train()
     print(model)
     return model
