@@ -86,8 +86,8 @@ class AlexNet(nn.Module):
         super(AlexNet, self).__init__()
         self.fType = fType
         self.c0 = nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2)
-        self.z0 = Zernike(1, 64, kernel_size=11, stride=4)
-        self.g0 = GaborConv2d(1, 64, kernel_size=11, stride=4)
+        self.z0 = Zernike(3, 64, kernel_size=11, stride=4)
+        self.g0 = GaborConv2d(3, 64, kernel_size=11, stride=4)
 
         self.features = nn.Sequential(
             nn.ReLU(inplace=True),
@@ -97,21 +97,21 @@ class AlexNet(nn.Module):
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(192, 384, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(384, 220, kernel_size=3, padding=1),
+            nn.Conv2d(384, 256, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(220, 220, kernel_size=3, padding=1),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2)
         )
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         self.classifier = nn.Sequential(
             nn.Dropout(0.5),
-            nn.Linear(220 * 6 * 6, 4096),
+            nn.Linear(9216, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(4096, 4096),
+            nn.Linear(1024, 128),
             nn.ReLU(inplace=True),
-            nn.Linear(4096, 2)
+            nn.Linear(128, 2)
         )
 
         for m in self.modules():
@@ -141,7 +141,7 @@ class AlexNet(nn.Module):
             x = self.g0(inputs)
 
         x = self.features(x)
-        x = self.avgpool(x)
+#        x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
