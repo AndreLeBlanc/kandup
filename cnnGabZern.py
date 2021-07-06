@@ -86,8 +86,8 @@ class AlexNet(nn.Module):
         super(AlexNet, self).__init__()
         self.fType = fType
         self.c0 = nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2)
-        self.z0 = Zernike(1, 64, kernel_size=11, stride=4)
-        self.g0 = GaborConv2d(1, 64, kernel_size=11, stride=4)
+        self.z0 = Zernike(3, 64, kernel_size=11, stride=4)
+        self.g0 = GaborConv2d(3, 64, kernel_size=11, stride=4)
 
         self.features = nn.Sequential(
             nn.ReLU(inplace=True),
