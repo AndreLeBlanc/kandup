@@ -28,7 +28,7 @@ class Zernike(_ConvNd):
                 a = abs(i-center)
                 b = abs(j-center)
                 dist = math.sqrt(a*a + b*b)
-                if dist <= center+0.01:
+                if dist <= center+0.2:
                     radials[i, j] = dist
         return radials
 
@@ -49,7 +49,8 @@ class Zernike(_ConvNd):
             for j in range(0, filtSide):
                 if r[i, j] > 0:
                     localPhi = phi  + math.atan(abs(j-center)/(abs(i-center)+0.001))
-                    r[i, j] *= cmath.exp(rep*localPhi*1j).real
+                    comp = cmath.exp(rep*localPhi*1j)
+                    r[i, j] *= (comp.imag + comp.real)
         return r
 
     def forward(self, input_tensor):

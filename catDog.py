@@ -15,15 +15,17 @@ from sys import argv
 
 #my files
 import cnnGabZern
+
 import dataset
 
-batch_size = 64 # we will use mini-batch method
+batch_size = 156 # we will use mini-batch method
 epochs = 50 # How much to train a model
 valAccs = []
 
-imSize = 256
+imSize = 227
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(torch.cuda.is_available(), "GPU available")
 torch.manual_seed(1234)
 if device =='cuda':
     torch.cuda.manual_seed_all(1234)
@@ -66,7 +68,6 @@ def unZip(trainPath):
 def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernelSize):
     print(len(train_data), len(train_loader))
     print(len(val_data), len(val_loader))
-    print(train_data[0][0].shape)
     inChannels = train_data[0][0].shape[0]
     if whichNet.upper() == "CNNC":
         model = cnnGabZern.oneConv(kernelSize, "Conv2d", inChannels, imSize).to(device)
@@ -96,7 +97,6 @@ def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernel
 def runEpoch(model, train_loader, optimizer, criterion):
     epoch_loss = 0
     epoch_accuracy = 0
-
     for data, label in train_loader:
         data = data.to(device)
         label = label.to(device)
@@ -119,7 +119,6 @@ def validateEpoch(model, val_loader, criterion, epoch):
         for data, label in val_loader:
             data = data.to(device)
             label = label.to(device)
-
             val_output = model(data)
             val_loss = criterion(val_output,label)
 
@@ -171,7 +170,7 @@ def dogProb(model, test_loader):
 
 def main():
     if argv[3].upper() == "KIDNEY":
-        train_dir= 'data/trainKidney'
+        train_dir= 'kid2/kidneys'
     else:
         train_dir= 'data/train'
     unZip(train_dir)

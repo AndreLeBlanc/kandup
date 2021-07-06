@@ -1,5 +1,7 @@
 import torch
+import torch.nn.functional as F
 from PIL import Image
+from torchvision.transforms import ToTensor
 
 class dataset(torch.utils.data.Dataset):
     def __init__(self,file_list,transform=None):
@@ -16,7 +18,10 @@ class dataset(torch.utils.data.Dataset):
     def __getitem__(self,idx):
         img_path = self.file_list[idx]
         img = Image.open(img_path)
-        img_transformed = self.transform(img)
+        if img_path.split('/')[-1].split('.')[2] == "tif":
+            img_transformed = ToTensor()(img)
+        else:
+            img_transformed = self.transform(img)
         label = img_path.split('/')[-1].split('.')[0]
         if label == 'dog':
             label=1
