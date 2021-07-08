@@ -304,7 +304,7 @@ val_logs = {"loss" : [], "accuracy" : [], "time" : []}
 model.to(device)
 
 # No of epochs
-epochs = 1
+epochs = 50
 
 # %% [code] {"execution":{"iopub.status.busy":"2021-07-08T10:47:50.465535Z","iopub.execute_input":"2021-07-08T10:47:50.4659Z","iopub.status.idle":"2021-07-08T10:50:09.719593Z","shell.execute_reply.started":"2021-07-08T10:47:50.465865Z","shell.execute_reply":"2021-07-08T10:50:09.718047Z"}}
 ### Training and Validation xD
