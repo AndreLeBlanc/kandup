@@ -19,7 +19,7 @@ class Zernike(_ConvNd):
         super(Zernike, self).__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, False, _pair(0), groups, bias, padding_mode)
         self.is_calculated = False
         self.device = device
-        self.weights = torch.empty(self.weight.shape, requires_grad=False).to(self.device)
+        self.weights = torch.empty(self.weight.shape, requires_grad=False)#.to(self.device)
 
     def radialDist(self, filtSide, center):
         radials = torch.zeros(filtSide, filtSide)
