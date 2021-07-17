@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Any
 from GaborNet import GaborConv2d
+from myFilt import Zernike
 
 __all__ = ['AlexNet', 'alexnet']
 
@@ -16,7 +17,7 @@ class AlexNet(nn.Module):
     def __init__(self, num_classes: int = 1000) -> None:
         super(AlexNet, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
+            #nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(64, 192, kernel_size=5, padding=2),
@@ -41,7 +42,9 @@ class AlexNet(nn.Module):
             nn.Linear(4096, 1000)
         )
 
+    self.z0 = Zernike(3, 64, kernel_size=11, stride=4)
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.z0(x)
         x = self.features(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
