@@ -9,7 +9,7 @@ from torch.nn.modules.utils import _pair
 from torch import linalg as la
 
 class Zernike(_ConvNd):
-    def __init__(self, in_channels, out_channels, kernel_size, device="cpu", stride=1,
+    def __init__(self, in_channels, out_channels, kernel_size, device="cuda", stride=1,
                  padding=0, dilation=1, groups=1, bias=False, padding_mode='zeros'):
         kernel_size = _pair(kernel_size)
         stride = _pair(stride)
@@ -81,4 +81,5 @@ class Zernike(_ConvNd):
                 normalized.data = normalized.data + torch.div(exponents, norm)
                 g[i, j] = normalized
         self.weights = g
+        print(type(self.weights))
         return F.conv2d(input_tensor, self.weights, self.bias, self.stride, self.padding, self.dilation, self.groups)

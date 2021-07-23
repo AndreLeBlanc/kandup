@@ -42,7 +42,8 @@ class AlexNet(nn.Module):
             nn.Linear(4096, 1000)
         )
 
-    self.z0 = Zernike(3, 64, kernel_size=11, stride=4)
+        self.z0 = Zernike(3, 64, kernel_size=11, stride=4)
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.z0(x)
         x = self.features(x)
