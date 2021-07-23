@@ -18,7 +18,7 @@ import cnnGabZern
 
 import dataset
 
-batch_size = 156 # we will use mini-batch method
+batch_size = 8 # we will use mini-batch method
 epochs = 50 # How much to train a model
 valAccs = []
 
@@ -90,6 +90,7 @@ def createModel(train_data, train_loader, val_data, val_loader, whichNet, kernel
     else:
         print("no model named ", whichNet)
         exit(0)
+    model = model.float()
     model.train()
     print(model)
     return model
@@ -98,6 +99,7 @@ def runEpoch(model, train_loader, optimizer, criterion):
     epoch_loss = 0
     epoch_accuracy = 0
     for data, label in train_loader:
+        data = data.float()
         data = data.to(device)
         label = label.to(device)
         output = model(data)
@@ -117,6 +119,7 @@ def validateEpoch(model, val_loader, criterion, epoch):
         epoch_val_accuracy=0
         epoch_val_loss =0
         for data, label in val_loader:
+            data = data.float()
             data = data.to(device)
             label = label.to(device)
             val_output = model(data)
@@ -170,7 +173,7 @@ def dogProb(model, test_loader):
 
 def main():
     if argv[3].upper() == "KIDNEY":
-        train_dir= 'kid2/kidneys'
+        train_dir= 'data/tifs'
     else:
         train_dir= 'data/train'
     unZip(train_dir)
