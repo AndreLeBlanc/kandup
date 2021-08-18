@@ -40,7 +40,9 @@ class threeConv(nn.Module):
    def __init__(self, kernelSize, fType, inputs, imSize):
       super(threeConv, self).__init__()
       fcIn = ((((imSize-kernelSize+1)//4-2)//2-2)//2-2)
+      print("fcn", fcIn)
       fcIn = fcIn*fcIn*128
+      print("fcn", fcIn)
       self.g0 = GaborConv2d(in_channels=inputs, out_channels=32,
                             kernel_size=kernelSize, stride=1)
       self.c0 = nn.Conv2d(in_channels=inputs, out_channels=32,
@@ -51,7 +53,8 @@ class threeConv(nn.Module):
       self.c2 = nn.Conv2d(64, 128, (3,3), stride=1)
       self.c3 = nn.Conv2d(128, 128, (3,3), stride=1)
       self.c4 = nn.Conv2d(128, 128, (3,3), stride=1)
-      self.fc1 = nn.Linear(fcIn, 128)
+      print("fcn", fcIn)
+      self.fc1 = nn.Linear(10368, 128)
       self.fc2 = nn.Linear(128, 2)
       self.fType = fType
 
@@ -85,7 +88,7 @@ class AlexNet(nn.Module):
     def __init__(self, fType, global_params=None):
         super(AlexNet, self).__init__()
         self.fType = fType
-        self.c0 = nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2)
+        self.c0 = nn.Conv2d(1, 64, kernel_size=11, stride=4, padding=2)
         self.z0 = Zernike(3, 64, kernel_size=11, stride=4)
         self.g0 = GaborConv2d(3, 64, kernel_size=11, stride=4)
 

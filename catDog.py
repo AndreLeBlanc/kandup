@@ -18,7 +18,7 @@ import cnnGabZern
 
 import dataset
 
-batch_size = 8 # we will use mini-batch method
+batch_size = 16# we will use mini-batch method
 epochs = 50 # How much to train a model
 valAccs = []
 
@@ -177,7 +177,7 @@ def main():
     else:
         train_dir= 'data/train'
     unZip(train_dir)
-    train_list = glob.glob(os.path.join(train_dir,'*.jpg'))
+    train_list = glob.glob(os.path.join(train_dir,'*.tif'))
     train_list, val_list = train_test_split(train_list, test_size=0.2)
     train_data = dataset.dataset(train_list, transform=train_transforms)
     val_data = dataset.dataset(val_list, transform=test_transforms)
